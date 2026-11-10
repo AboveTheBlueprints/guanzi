@@ -45,15 +45,23 @@ function el(cls, text) { const d = document.createElement('div'); d.className = 
 function render() {
   const r = gzRun(acts);
   log.innerHTML = '';
-  let tab = null;
-  for (const line of r.out) {
-    if (line.startsWith('\n======')) { tab = null; log.appendChild(el('wk', line.replace(/[\n=]/g, '').trim())); continue; }
-    if (line.startsWith('—— ')) { tab = null; log.appendChild(el(line === '—— 礼拜天 ——' ? 'day sun' : 'day', line.replace(/—— /g, '').replace(/ ——/g, ''))); continue; }
-    if (line.startsWith('这一礼拜')) { tab = el('tab', ''); tab.appendChild(el('', line)); log.appendChild(tab); continue; }
-    if (line === '') continue;
-    if (tab) { tab.appendChild(el('', line)); continue; }
+  // 过完的礼拜只留标题、礼拜天那句和那张表，每天的早上收起来（罐网1：第二个礼拜末找今天在哪很费眼）
+  let lastWk = 0;
+  r.out.forEach((l, i) => { if (l.startsWith('\n======')) lastWk = i; });
+  let tab = null, old = false;
+  r.out.forEach((line, i) => {
+    if (line.startsWith('\n======')) { tab = null; old = i < lastWk; log.appendChild(el('wk', line.replace(/[\n=]/g, '').trim())); return; }
+    if (line.startsWith('这一礼拜')) { tab = el('tab', ''); tab.appendChild(el('', line)); log.appendChild(tab); return; }
+    if (line === '') return;
+    if (tab) { tab.appendChild(el('', line)); return; }
+    if (line.startsWith('—— ')) {
+      const sun = line === '—— 礼拜天 ——';
+      if (old && !sun) return;
+      log.appendChild(el(sun ? 'day sun' : 'day', line.replace(/—— /g, '').replace(/ ——/g, ''))); return;
+    }
+    if (old && !line.startsWith('礼拜天你不在')) return;
     log.appendChild(el('ln', line));
-  }
+  });
   btns.innerHTML = '';
   const n = acts.filter(a => a !== '__看').length;
   if (r.who === 'peek') {
