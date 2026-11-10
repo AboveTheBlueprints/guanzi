@@ -11,11 +11,13 @@
   .open p { margin: 0 0 10px; line-height: 1.7; }
   #log { margin-top: 18px; line-height: 1.75; }
   #log .wk { margin: 22px 0 6px; font-weight: 600; color: #7a5a3a; }
-  #log .day { margin-top: 10px; color: #8a7a68; font-size: 14px; }
+  #log .day { margin-top: 10px; color: #6f604f; font-size: 14px; }
   #log .ln { margin: 0; }
   #log .sun { margin-top: 12px; font-weight: 600; }
   #log .tab { margin: 8px 0 4px; padding: 10px 12px; background: #e8dcc5; border-radius: 6px; font-size: 14px; line-height: 1.7; }
-  #log .tab div { margin: 2px 0; }
+  #log .tab .row { margin: 8px 0; }
+  #log .tab .rd { font-weight: 600; }
+  #log .tab .rq { padding-left: 1em; }
   #bar { position: fixed; left: 0; right: 0; bottom: 0; background: #efe3cc; border-top: 1px solid #d8c7a8; }
   #bar .in { max-width: 640px; margin: 0 auto; padding: 12px 18px 16px; }
   #ask { margin-bottom: 10px; }
@@ -53,7 +55,16 @@ function render() {
     if (line.startsWith('\n======')) { tab = null; old = i < lastWk; log.appendChild(el('wk', line.replace(/[\n=]/g, '').trim())); return; }
     if (line.startsWith('这一礼拜')) { tab = el('tab', ''); tab.appendChild(el('', line)); log.appendChild(tab); return; }
     if (line === '') return;
-    if (tab) { tab.appendChild(el('', line)); return; }
+    if (tab) {
+      // 一行拆成三行：你／罐子／狗（罐网2：一行塞三件事，扫着看容易漏掉时间，五点和中午正好要紧）
+      const parts = line.split('｜');
+      if (parts.length === 4) {
+        const row = el('row', ''); row.appendChild(el('rd', parts[0]));
+        for (const q of parts.slice(1)) row.appendChild(el('rq', q));
+        tab.appendChild(row);
+      } else tab.appendChild(el('', line));
+      return;
+    }
     if (line.startsWith('—— ')) {
       const sun = line === '—— 礼拜天 ——';
       if (old && !sun) return;
